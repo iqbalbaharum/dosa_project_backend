@@ -3,18 +3,17 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+require('dotenv').config()
+
+const abi = require('./data/dosamintburn_abi.json')
 
 var indexRouter = require('./routes/index');
 
-const bigchaindb = require('./datasource/bigchaindb.datasource')
+const bigchaindb = require('./datasource/bigchaindb.datasource');
+const { mint } = require('./controller/nft.controller');
 
-require('dotenv').config()
-
-main = async() => {
-  
-}
-
-main()
+const Web3 = require('web3')
+const web3 = new Web3(process.env.ETH_RPC_URL)
 
 var app = express();
 
@@ -41,5 +40,20 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+const contract = new web3.eth.Contract(abi, process.env.ADDRESS_MINTBURN)
+
+contract.events.Mint({
+  filter: {
+      value: [],
+  },
+  fromBlock: 'latest'
+}).on('data', async(event) => {
+  await mint(event.returnValues.to)
+})
+  .on('changed', changed => console.log('changed', changed))
+  .on('error', err => console.log('err', err))
+
+
 
 module.exports = app;

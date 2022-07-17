@@ -42,9 +42,11 @@ exports.createMetadata = async(req, res) => {
     metadata
   })
 
-  res.json({
-    asset_id:`bcdb://${asset.id}`
-  })
+  // res.json({
+  //   asset_id:`bcdb://${asset.id}`
+  // })
+
+  return `bcdb://${asset.id}`
 }
 
 /***

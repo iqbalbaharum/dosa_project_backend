@@ -47,6 +47,10 @@ exports.create = async ({ asset, metadata }) => {
 exports.append = async (txCreatedID, metadata) => {
     try {
         let txCreated = await conn.getTransaction(txCreatedID)
+        if(!txCreated) {
+            throw new Error('Invalid asset id')
+        }
+        
         const updatedBuilding = BigChainDB.Transaction.makeTransferTransaction(
             [
                 {
