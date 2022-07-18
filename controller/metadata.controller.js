@@ -31,6 +31,26 @@ exports.createMetadata = async(req, res) => {
     level: {
       current: 1,
       next_level: 500 * Math.pow((2), 2) - (500 * 2)
+    },
+    base: {
+      type: '1-rocket',
+    },
+    parts: {
+      body: {
+        type: 'slot',
+        src: 'ipfs://bafybeifft6ugdvzhnbnaqwphhoxirzpoqbzgkpylajd4f3nhy7mualvs3y/DOSA1-ship-blue-OG-0001.png',
+        nft: {}
+      },
+      bullet: {
+        type: 'slot',
+        src: 'ipfs://bafybeibnbvbswbwoeivs5ejmxqcj5g54alibgtzzydgvhqtmmu7le2vlre/DOSA1-laser-blue-OG-0001.png',
+        nft: {}
+      },
+      effect: {
+        type: 'slot',
+        src: '',
+        nft: {}
+      }
     }
   }
 

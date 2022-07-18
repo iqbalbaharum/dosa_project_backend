@@ -1,8 +1,9 @@
 const Web3 = require('web3')
 const { createMetadata } = require('./metadata.controller')
+const bigchaindb = require('../datasource/bigchaindb.datasource.js')
 const { getNftMetadata } = require('../services/covalenthq.service')
 const web3StorageService = require('../services/web3-storage.service.js')
-const web3 = new Web3(process.env.ETH_RPC_URL)
+const web3 = new Web3(process.env.ETH_RPC_URL_HTTP)
 const nft721abi = require('../data/DOSA1NFT_abi.json')
 
 exports.mint = async(req, res) => {
@@ -36,21 +37,87 @@ exports.consumeNft = async(req, res) => {
     return
   }
 
-  for(const item of response.data.items) {
-    if(!nft_data) continue
-
-
-  }
-
-
 
   //find the nft metadata
-  const [baseNft, consumableNft] = await Promise.All([
+  const responses = await Promise.all([
     getNftMetadata(parseInt(process.env.CHAIN_ID), req.body.base_address, req.body.base_token_id),
     getNftMetadata(parseInt(process.env.CHAIN_ID), req.body.consumable_address, req.body.consumable_token_id)
   ])
 
-  //get base hash
+  if(!responses[0].data.data.items[0]) {
+    res.status(400).json({
+      message: 'INVALID BASE NFT'
+    })
+    return
+  }
 
-  console.log(baseNft, consumableNft)
+  if(!responses[1].data.data.items[0]) {
+    res.status(400).json({
+      message: 'INVALID CONSUMABLES NFT'
+    })
+    return
+  }
+
+  const baseNft = responses[0].data.data.items[0].nft_data[0]
+  const consumableNft = responses[1].data.data.items[0].nft_data[0]
+
+  // read data
+  baseProtocol = baseNft.token_url.split('://')
+  consumableProtocol = consumableNft.token_url.split('://')
+
+  if(baseProtocol[0] !== 'bcdb') {
+    res.status(400).json({
+      message: 'INVALID BASE PROTOCOL'
+    })
+    return
+  }
+
+  if(consumableProtocol[0] !== 'ipfs') {
+    res.status(400).json({
+      message: 'INVALID CONSUMABLES PROTOCOL'
+    })
+    return
+  }
+
+  const baseAsset = await bigchaindb.fetchLatestTransaction(baseProtocol[1])
+
+  if(!baseAsset.metadata.parts) {
+    res.status(400).json({
+      message: 'BASE NFT IS NOT SLOTABLE'
+    })
+  }
+
+  // Check if the slot valid
+  // TODO: Upgrade this weakling
+  // 1. Check base
+  const typeAttr = consumableNft.external_data.attributes.find(e => e.trait_type === 'base')
+  if(!typeAttr || typeAttr.value !== baseAsset.metadata.base.type) {
+    res.status(400).json({
+      message: 'CONSUMABLE NFT DOESNT MATCH THE BASE NFT'
+    })
+
+    return
+  }
+
+  // 2. Check if the slot type match
+  const slotAttr = consumableNft.external_data.attributes.find(e => e.trait_type === 'slot')
+  if(baseAsset.metadata.parts[slotAttr.value].type !== 'slot') {
+    res.status(400).json({
+      message: 'CONSUMABLE NFT DOESNT MATCH THE BASE NFT'
+    })
+
+    return
+  }
+
+  // 3. all good - then merge
+  baseAsset.metadata.parts[slotAttr.value]['src'] = consumableNft.external_data.attributes.find(e => e.trait_type === 'resource').value
+  baseAsset.metadata.parts[slotAttr.value]['nft'] = {
+    mechanic: "burned",
+    type: "erc721",
+    address: req.body.consumable_address,
+    tokenId: req.body.consumable_token_id
+  }
+
+  await bigchaindb.append(baseProtocol[1], baseAsset.metadata)
+  console.log(baseProtocol[1])
 }

@@ -1,0 +1,20 @@
+{
+  "name": "Burnable Equipment #2",
+  "description": "Blue Bullet",
+  "image": "ipfs://bafybeibnbvbswbwoeivs5ejmxqcj5g54alibgtzzydgvhqtmmu7le2vlre/DOSA1-laser-blue-OG-0001.png",
+  "external_url": "",
+  "attributes": [
+    {
+      "trait_type": "base",
+      "value": "1-rocket"
+    },
+    {
+      "trait_type": "slot",
+      "value": "body"
+    },
+    {
+      "trait_type": "resource",
+      "value": "ipfs://bafybeibnbvbswbwoeivs5ejmxqcj5g54alibgtzzydgvhqtmmu7le2vlre/DOSA1-laser-blue-OG-0001.png"
+    }
+  ]
+}
