@@ -3,6 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var cors = require('cors')
+
 require('dotenv').config()
 
 const abi = require('./data/dosamintburn_abi.json')
@@ -16,6 +18,10 @@ const Web3 = require('web3')
 const web3 = new Web3(process.env.ETH_RPC_URL)
 
 var app = express();
+
+app.use(cors({
+  origin: '*'
+}));
 
 app.use(logger('dev'));
 app.use(express.json());
