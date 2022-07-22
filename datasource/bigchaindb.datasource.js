@@ -34,6 +34,8 @@ exports.create = async ({ asset, metadata }) => {
 
     const txSigned = BigChainDB.Transaction.signTransaction(txCreate, process.env.BCDB_PRIVATE_KEY)
 
+    console.log(txCreate)
+
     let assetCreated = await conn.postTransactionCommit(txSigned)
     
     return assetCreated ?? {}

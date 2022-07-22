@@ -74,10 +74,20 @@ exports.createMetadata = async(req, res) => {
  * 1 kill = 1 DOSA
  */
 exports.kill = async(req, res) => {
-  if(req.body.kill <= 0) return
-  if(!req.body.asset_id) return
+  if(req.body.kill <= 0) {
+    res.status(400).json({
+      error: 'NO KILL'
+    })
+    return
+  }
+  if(!req.body.asset_id) {
+    res.status(400).json({
+      error: 'NO ASSET ID'
+    })
+    return
+  }
 
-  const total_point = req.body.kill * 0.01
+  const total_point = req.body.kill * 10
   
   const asset = await bigChainDataSource.fetchLatestTransaction(req.body.asset_id)
 
@@ -86,13 +96,35 @@ exports.kill = async(req, res) => {
   // update the metadata
   asset.metadata.token.available += total_point
 
-  await bigChainDataSource.append(asset.id, asset.metadata)
+  res.json(await bigChainDataSource.append(asset.id, asset.metadata))
 }
 
 /***
  * Character level up
  */
 exports.levelup = async(req, res) => {
+  if(!req.body.asset_id) {
+    res.status(400).json({
+      error: 'NO ASSET ID'
+    })
+    return
+  }
+
+  const asset = await bigChainDataSource.fetchLatestTransaction(req.body.asset_id)
+
+  if(asset.metadata.token.available >= asset.metadata.level.next_level) {
+    asset.metadata.token.available = asset.metadata.token.available - asset.metadata.level.next_level
+    asset.metadata.level.current++
+    asset.metadata.token.spent = asset.metadata.token.spent + asset.metadata.level.next_level
+
+    res.json(await bigChainDataSource.append(asset.id, asset.metadata))
+    return
+  }
+
+  res.status(400).json({
+    error: 'NOT ENOUGH TO UPGRADE'
+  })
+  return
 }
 
 /**

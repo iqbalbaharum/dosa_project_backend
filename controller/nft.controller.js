@@ -4,22 +4,12 @@ const bigchaindb = require('../datasource/bigchaindb.datasource.js')
 const { getNftMetadata } = require('../services/covalenthq.service')
 const web3StorageService = require('../services/web3-storage.service.js')
 const web3 = new Web3(process.env.ETH_RPC_URL_HTTP)
+// abi
 const nft721abi = require('../data/DOSA1NFT_abi.json')
+const nftslotabi = require('../data/DosaSlotNFT-abi.json')
 
 exports.mint = async(req, res) => {
-  const uri = await createMetadata()
-  const contract = new web3.eth.Contract(nft721abi, process.env.ADDRESS_NFT721)
-  // add private key
-  web3.eth.accounts.wallet.add(process.env.ETH_PRIVATE_KEY)
-  contract.setProvider(web3.currentProvider)
-
-  await contract.methods
-    .mint(req.body.to_address, uri)
-    .send({
-      from: process.env.ETH_PUBLIC_KEY,
-      to: process.env.ADDRESS_NFT721,
-      gas: parseInt(process.env.GAS_FEE) ?? 300000
-    })
+  res.json(await createMetadata())
 }
 
 exports.consumeNft = async(req, res) => {
@@ -118,6 +108,30 @@ exports.consumeNft = async(req, res) => {
     tokenId: req.body.consumable_token_id
   }
 
-  await bigchaindb.append(baseProtocol[1], baseAsset.metadata)
-  console.log(baseProtocol[1])
+  try {
+    await bigchaindb.append(baseProtocol[1], baseAsset.metadata)
+    // burn consumable
+    await this.burnConsumableNFT(nftslotabi, req.body.consumable_address, req.body.consumable_token_id)
+  } catch(e) {
+    res.status(400).json({
+      message: e
+    })
+
+    return
+  }
+}
+
+exports.burnConsumableNFT = async (abi, address, token_id) => {
+  const contract = new web3.eth.Contract(abi, address)
+  // add private key
+  web3.eth.accounts.wallet.add(process.env.ETH_PRIVATE_KEY_2)
+  contract.setProvider(web3.currentProvider)
+
+  await contract.methods
+    .burn(token_id)
+    .send({
+      from: process.env.ETH_PUBLIC_KEY_2,
+      to: address,
+      gas: parseInt(process.env.GAS_FEE) ?? 300000
+    })
 }

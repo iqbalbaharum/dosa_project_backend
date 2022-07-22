@@ -1,5 +1,5 @@
 var express = require('express');
-const { createMetadata, checkout, kill, fetchLatest } = require('../controller/metadata.controller');
+const { createMetadata, checkout, kill, fetchLatest, levelup } = require('../controller/metadata.controller');
 const { mint, consumeNft } = require('../controller/nft.controller');
 var router = express.Router();
 
@@ -39,6 +39,14 @@ router.post('/dosa/mint', async (req, res, next) => {
 router.post('/dosa/consume', async(req, res) => {
   try {
     await consumeNft(req, res)
+  } catch(e) {
+    console.log(e)
+  }
+})
+
+router.post('/dosa/levelup', async(req, res) => {
+  try {
+    await levelup(req, res)
   } catch(e) {
     console.log(e)
   }
